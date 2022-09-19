@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys, os
-import xbmc, xbmcaddon
+import xbmc, xbmcaddon, xbmcvfs
 
 is_python2 = sys.version_info.major == 2
 
@@ -22,8 +22,10 @@ def showparentdiritems():
     else:
         return False
 
-addon_dir = py2_decode(xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')))
-
+if is_python2:
+    addon_dir = py2_decode(xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')))
+else:
+    addon_dir = xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('path'))
 
 def artPath(channel):
     art = channel.lower() + '.png'

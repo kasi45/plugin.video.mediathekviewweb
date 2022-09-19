@@ -2,14 +2,12 @@
 import os
 import requests
 import sys
-import xbmc
-import xbmcaddon
 import xbmcvfs
 
-from resources.lib.utils import py2_encode, py2_decode
+from resources.lib.utils import py2_encode, addon_dir
 
 # add pycaption module to path
-addon_dir = py2_decode(xbmc.translatePath(xbmcaddon.Addon().getAddonInfo('path')))
+
 module_dir = os.path.join(addon_dir, "resources", "lib", "pycaption")
 sys.path.insert(0, module_dir)
 

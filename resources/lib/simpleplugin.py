@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Created on: 03.06.2015
+
+# https://github.com/vlmaksime/script.module.simpleplugin
 """
 SimplePlugin micro-framework for Kodi content plugins
 
@@ -9,7 +11,8 @@ SimplePlugin micro-framework for Kodi content plugins
 """
 
 from __future__ import unicode_literals
-from future.builtins import *
+from future.builtins import (zip, super,
+                             bytes, dict, int, list, object, str)
 from future.utils import (PY2, PY3, iteritems, itervalues,
                           python_2_unicode_compatible)
 # from future.standard_library import install_aliases
@@ -26,8 +29,7 @@ import inspect
 import time
 import hashlib
 import pickle
-from io import open
-from collections import MutableMapping, namedtuple
+from collections import namedtuple
 from copy import deepcopy
 from functools import wraps
 from shutil import copyfile
@@ -36,16 +38,20 @@ from pprint import pformat
 from platform import uname
 if PY3:
     from urllib.parse import urlencode, quote_plus, urlparse, unquote_plus, parse_qs
+    from typing import MutableMapping
 else:
     from future.backports.urllib.parse import urlencode, quote_plus, urlparse, unquote_plus
     from urlparse import parse_qs
+    from collections import MutableMapping
+
 import xbmcaddon
 import xbmc
 import xbmcgui
+import xbmcvfs
 
 __all__ = ['SimplePluginError', 'Storage', 'MemStorage', 'Addon', 'Plugin',
            'RoutedPlugin', 'Params', 'log_exception', 'py2_encode',
-           'py2_decode']
+           'py2_decode', 'translate_path']
 
 if PY3:
     getargspec = inspect.getfullargspec
@@ -101,6 +107,16 @@ def py2_decode(s, encoding='utf-8'):
     if PY2 and isinstance(s, bytes):
         s = s.decode(encoding)
     return s
+
+def _kodi_major_version():
+    kodi_version = xbmc.getInfoLabel('System.BuildVersion').split(' ')[0]
+    return kodi_version.split('.')[0]
+
+def translate_path(*args, **kwargs):
+    if _kodi_major_version() < '19':
+        return xbmc.translatePath(*args, **kwargs)
+    else:
+        return xbmcvfs.translatePath(*args, **kwargs)
 
 
 @contextmanager
@@ -362,7 +378,7 @@ class MemStorage(MutableMapping):
             try:
                 return pickle.loads(bytes(raw_item))
             except TypeError as e:
-                return pickle.loads(bytes(raw_item, 'utf-8'))
+                return pickle.loads(bytes(raw_item, 'utf-8', errors='surrogateescape'))
         else:
             raise KeyError(key)
 
@@ -420,7 +436,7 @@ class Addon(object):
         """
         self._addon = xbmcaddon.Addon(id_)
         self._profile_dir = py2_decode(
-            xbmc.translatePath(self._addon.getAddonInfo('profile'))
+            translate_path(self._addon.getAddonInfo('profile'))
         )
         self._ui_strings_map = None
         if not os.path.exists(self._profile_dir):
@@ -677,7 +693,10 @@ class Addon(object):
         :param message: message to write to the Kodi log
         :type message: str
         """
-        self.log(message, xbmc.LOGNOTICE)
+        if _kodi_major_version() < '19':
+            self.log(message, xbmc.LOGNOTICE)
+        else:
+            self.log(message, xbmc.LOGINFO)
 
     def log_warning(self, message):
         """
