@@ -43,11 +43,14 @@ def list_videos(callback, page, query=None, channel=None):
     results = data["result"]["results"]
 
     no_duplicates = []
-
     for i in results:
         # keine unterstützung für ORF - videos können nicht abgespielt werden
         if i["channel"] == 'ORF': continue
-        dt = datetime.datetime.fromtimestamp(i["timestamp"], pytz.timezone("Europe/Berlin"))
+        #if i["timestamp"]: print(i["timestamp"])
+        try:
+            dt = datetime.datetime.fromtimestamp(i["timestamp"], pytz.timezone("Europe/Berlin"))
+        except:
+            pass
         url = ''
         if QUALITY == 0:  # Hoch
             for j in ("url_video_hd", "url_video", "url_video_low"):
