@@ -75,19 +75,24 @@ def last_queries():
             query = control.py2_encode(query)
         channel = item.get('channel')
         if channel:
-            label = "{0}: {1}".format(channel, query)
+            if query:
+                label = "{0}: {1}".format(channel, query)
+            else:
+                label = "{0}".format(channel)
+            thumb = channel + '.png'
         else:
             channel = None
             label = query
+            thumb = 'icon.png'
         if label not in lst:
             delete_option = True
-            addDirectoryItem(label, 'list_videos&query=%s&channel=%s' % (query, channel), 'search.png',
+            addDirectoryItem(label, 'list_videos&query=%s&channel=%s' % (query, channel), thumb,
                                                    'DefaultAddonsSearch.png',
                                                    context=("Suchanfrage löschen", 'removeQuery&index=%s' % index))
             lst += [(label)]
 
     if delete_option:
-        addDirectoryItem("[B]Suchverlauf löschen[/B]", 'searchClear', 'plugin_info.png', 'DefaultAddonProgram.png', isFolder=False)
+        addDirectoryItem("[B]Suchverlauf löschen[/B]", 'searchClear', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
     setEndOfDirectory(cache=False)  # addons  videos  files
 
 def chk_duplicates(url, title, topic, duplicates):
@@ -120,7 +125,7 @@ def addDirectoryItem(name, query, thumb, icon, context=None, queue=False, isActi
     thumb = getMedia(thumb, icon)
     #laut kodi doku - ListItem([label, label2, path, offscreen])
     listitem = control.item(name, offscreen=True) # Removed iconImage and thumbnailImage
-    listitem.setArt({'poster': thumb})
+    listitem.setArt({'thumb': thumb, 'poster': thumb, 'icon': icon, 'banner': getMedia('banner')})
     if not context == None:
         cm = []
         cm.append((context[0], 'RunPlugin(%s?action=%s)' % (sysaddon, context[1])))

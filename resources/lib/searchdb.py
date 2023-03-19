@@ -190,3 +190,4 @@ def remove_all_query():
             else:
                 break
     #xbmc.executebuiltin('Container.Refresh')
+

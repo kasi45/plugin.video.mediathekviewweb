@@ -33,3 +33,4 @@ if inAdvancedsettings('favourites.xml'):
 
     if not isWebSrv: xbmc.startServer(iTyp=xbmc.SERVER_WEBSERVER, bStart=True)
     if currentWebSkin != addonId: setWebSrv(addonId)
+
