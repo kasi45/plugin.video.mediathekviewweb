@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+#2023-03-19
+
 import json
 import xbmc
 from xbmcaddon import Addon
@@ -63,5 +65,8 @@ if inAdvancedsettings('favourites.xml'):
         if not isWebSrv: xbmc.startServer(iTyp=xbmc.SERVER_WEBSERVER, bStart=True)
     except:
         pass
+else:
+    isWebSrv = json.loads(xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.GetSettingValue","params":{"setting":"services.webserver"},"id":1}'))["result"]["value"]
+    if isWebSrv: xbmc.startServer(iTyp=xbmc.SERVER_WEBSERVER, bStart=False)
 
 
