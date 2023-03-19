@@ -39,6 +39,9 @@ def root():
     addDirectoryItem("Auf Sender suchen", 'channel&bSearch=True&bChannels=True', 'search.png', 'DefaultVideo.png')
     addDirectoryItem("Überall stöbern", 'channel&bSearch=False&bChannels=False', 'search.png', 'DefaultVideo.png')
     addDirectoryItem("Auf Sender stöbern", 'channel&bSearch=False&bChannels=True', 'search.png', 'DefaultVideo.png')
+    downloadFolder = control.getSetting('download.movie.path')
+    if len(control.listDir(downloadFolder)[0]) > 0:
+        addDirectoryItem("Alle Downloads", downloadFolder, 'downloads.png', 'DefaultFolder.png', isAction=False)
     addDirectoryItem("Einstellungen", 'addonSettings', 'tools.png', 'DefaultAddonProgram.png',  isFolder=False)
     setEndOfDirectory(cache=False)
 
@@ -224,7 +227,12 @@ def list_videos(query=None, channel=None, page=1):
             "studio": i["channel"],
         })
         li.setProperty("isPlayable", "true")
-
+        cm = []
+        subFolder = i['topic'] if i.get('topic', False) else None
+        title = control.quote(i["title"].replace(' ', '_'))
+        cm.append(("Download", 'RunPlugin(%s?action=download&name=%s&image=%s&url=%s&subfolder=%s)' % (sysaddon, title, getMedia(i["channel"]), url, subFolder)))
+        cm.append(('Einstellungen', 'RunPlugin(%s?action=addonSettings)' % sysaddon))
+        li.addContextMenuItems(cm)
         control.addItem(
             syshandle,
             '%s?action=play&url=%s' %(sysaddon, url),   #sysaddon(action="play", url=url, subtitle=i["url_subtitle"]),
@@ -257,6 +265,33 @@ def play(params):
             li.setSubtitles([subtitle_file])
     control.resolveUrl(syshandle, True, li)
 
+def window(title='', content='', filename=''):
+    import xbmc, xbmcgui, time, os
+    if content == '' and filename == '': return
+    if content == '' and filename != '':
+        file = os.path.join(control.py2_decode(control.translatePath(control.addonInfo('path'))), 'resources', filename)
+        if sys.version_info[0] == 2:
+            with open(file, 'r') as f:
+                content = f.read()
+        else:
+            with open(file, 'rb') as f:
+                content = f.read().decode('utf8')
+
+        window_id = 10147
+        control_label = 1
+        control_textbox = 5
+        timeout = 1
+        xbmc.executebuiltin("ActivateWindow({})".format(window_id))
+        w = xbmcgui.Window(window_id)
+        # Wait for window to open
+        start_time = time.time()
+        while (not xbmc.getCondVisibility("Window.IsVisible({})".format(window_id)) and
+               time.time() - start_time < timeout):
+            xbmc.sleep(100)
+        # noinspection PyUnresolvedReferences
+        w.getControl(control_label).setLabel(title)
+        # noinspection PyUnresolvedReferences
+        w.getControl(control_textbox).setText(content)
 
 
 ## =======================================================================================
@@ -269,6 +304,13 @@ bChannels = eval(params.get('bChannels')) if params.get('bChannels') else None
 
 if action == None or action == 'root':
     root()
+
+elif action == "download":
+    from resources.lib import downloader
+    downloader.download(name=params.get("name"), image=params.get("image"), url=params.get("url"), subfolder=params.get("subfolder"))
+
+elif action == "downloadInfo":
+        window('Hilfe zum Syntax für den Ordnerpfad', '', 'downloadinfo.txt')
 
 elif action == 'searchQuery':
     query = showKeyBoard()

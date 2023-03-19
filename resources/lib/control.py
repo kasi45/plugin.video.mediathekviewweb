@@ -63,6 +63,17 @@ infoLabel = xbmc.getInfoLabel
 condVisibility = xbmc.getCondVisibility
 playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 keyboard = xbmc.Keyboard
+
+
+# kb = xbmc.Keyboard('default', 'heading', True)
+# kb.setDefault('password') # optional
+# kb.setHeading('Enter password') # optional
+# kb.setHiddenInput(True) # optional
+# kb.doModal()
+# if (kb.isConfirmed()):
+#   text = kb.getText()
+
+
 execute = xbmc.executebuiltin
 player = xbmc.Player()
 abortRequested = xbmc.Monitor().abortRequested()
