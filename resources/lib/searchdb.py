@@ -159,6 +159,7 @@ def _get_storage(filename='storage.pcl'):
     return _Storage(_profile_dir, filename)
 
 def save_query(query, channel=None):
+    if not query == None: query = query.lower()
     with _get_storage() as storage:
         if 'queries' not in storage:
             storage['queries'] = []
@@ -190,4 +191,3 @@ def remove_all_query():
             else:
                 break
     #xbmc.executebuiltin('Container.Refresh')
-

@@ -45,8 +45,8 @@ def root():
 def showChannels(bSearch, bChannels):
     if bChannels:
         data = {'error': None,
-                'channels': ['ARD', 'ZDF', 'MDR', 'ARTE.DE', '3Sat', 'ORF', 'PHOENIX', 'NDR', 'SWR', 'SRF', 'Funk.net', 'BR', 'SR', 'Radio Bremen TV', 'rbtv', 'DW', 'HR', 'WDR', 'RBB',
-                             'ZDF-tivi', 'KiKA']}
+                'channels': ['ARD', 'ZDF', 'MDR', 'ARTE.DE', '3Sat', 'PHOENIX', 'NDR', 'WDR', 'SWR', 'SRF', 'Funk.net', 'BR', 'SR', 'Radio Bremen TV', 'rbtv', 'DW', 'HR', 'RBB',
+                             'ZDF-tivi', 'KiKA']}   #  'ORF',
 
         channels = data["channels"]
         for channel in channels:
