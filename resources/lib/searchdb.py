@@ -15,7 +15,12 @@ import hashlib
 import pickle
 from copy import deepcopy
 from shutil import copyfile
-import xbmc, xbmcaddon, xbmcvfs
+import xbmc, xbmcaddon
+
+if sys.version_info[0] == 2:
+    from xbmc import translatePath
+else:
+    from xbmcvfs import translatePath
 
 if sys.version_info.major == 3:
     from typing import MutableMapping
@@ -154,7 +159,7 @@ def _get_storage(filename='storage.pcl'):
     :return: Storage object
     :rtype: Storage
     """
-    _profile_dir = _py2_decode(xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo('profile')))
+    _profile_dir = _py2_decode(translatePath(xbmcaddon.Addon().getAddonInfo('profile')))
 
     return _Storage(_profile_dir, filename)
 
