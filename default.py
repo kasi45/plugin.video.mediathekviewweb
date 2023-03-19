@@ -149,7 +149,7 @@ def getMedia(mediaFile=None, icon=None):
     mediaFile = mediaFile if mediaFile.rsplit('.')[-1] == 'png' else mediaFile + '.png'
     if control.exists(join(artPath, mediaFile)):
         if control.inAdvancedsettings('favourites.xml'):
-            mediaFile = 'http://127.0.0.1:8080/resources/media/%s' % mediaFile
+            mediaFile = 'http://kodi:kasi@127.0.0.1:8080/resources/media/%s' % mediaFile
         else:
             mediaFile = join(artPath, mediaFile)
     elif mediaFile.startswith('http'):
