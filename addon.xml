@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.mediathekviewweb" name="MediathekViewWeb V2" version="2023.03.20~nightly2" provider-name="itouch5000 - edit by kasi">
+<addon id="plugin.video.mediathekviewweb" name="MediathekViewWeb V2" version="2023.03.20~nightly3" provider-name="itouch5000 - edit by kasi">
     <requires>
         <import addon="script.module.requests" version="2.7.0"/>
         <!-- for remote debug -->
