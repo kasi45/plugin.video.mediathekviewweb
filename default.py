@@ -1,52 +1,171 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
+# http://10.128.5.167:8080/resources/media/ard.png
+# http://127.0.0.1:8080/resources/media/ard.png
+# http://localhost:8080/resources/media/ard.png
 
 import datetime
-import os
-import sys
-import xbmc
-import xbmcgui
-import xbmcplugin
-
+from os.path import join
+import sys, json
 from resources.lib.mediathekviewweb import MediathekViewWeb
-from resources.lib.simpleplugin import Plugin, Addon
-from resources.lib import utils
+from resources.lib import control
+from resources.lib.searchdb import *
 
 # add pytz module to path
-module_dir = os.path.join(utils.addon_dir, "resources", "lib", "pytz")
+module_dir = join(control.addonPath, "resources", "lib", "pytz")
 sys.path.insert(0, module_dir)
 import pytz
 
-artPath = utils.artPath
+sysaddon = sys.argv[0]
+syshandle = int(sys.argv[1]) if len(sys.argv) > 1 else ''
 
-plugin = Plugin()
-addon = Addon()
-_ = plugin.initialize_gettext()
-
-PER_PAGE = plugin.get_setting("per_page")
-FUTURE = plugin.get_setting("enable_future")
-QUALITY = plugin.get_setting("quality")
-SUBTITLE = plugin.get_setting("enable_subtitle")
+artPath = control.artPath()
+addonFanart = control.addonFanart()
 
 
-if SUBTITLE:
+PER_PAGE = int(control.getSetting("per_page"))
+FUTURE = True if control.getSetting("enable_future")=='true' else False
+QUALITY = int(control.getSetting("quality"))
+SUBTITLE = True if control.getSetting("enable_subtitle")=='true' else False
+
+if SUBTITLE == 'true':
     from resources.lib.subtitles import download_subtitle
 
+def root():
+    queries = load_queries()
+    if queries != []:
+        addDirectoryItem("Letzte Suchanfrage", 'lastQueries', 'search.png', 'DefaultVideo.png')
+    addDirectoryItem("Überall suchen", 'channel&bSearch=True&bChannels=False', 'search.png', 'DefaultVideo.png')
+    addDirectoryItem("Auf Sender suchen", 'channel&bSearch=True&bChannels=True', 'search.png', 'DefaultVideo.png')
+    addDirectoryItem("Überall stöbern", 'channel&bSearch=False&bChannels=False', 'search.png', 'DefaultVideo.png')
+    addDirectoryItem("Auf Sender stöbern", 'channel&bSearch=False&bChannels=True', 'search.png', 'DefaultVideo.png')
+    addDirectoryItem("Einstellungen", 'addonSettings', 'tools.png', 'DefaultAddonProgram.png',  isFolder=False)
+    setEndOfDirectory(cache=False)
 
-def list_videos(callback, page, query=None, channel=None):
+def showChannels(bSearch, bChannels):
+    if bChannels:
+        data = {'error': None,
+                'channels': ['ARD', 'ZDF', 'MDR', 'ARTE.DE', '3Sat', 'ORF', 'PHOENIX', 'NDR', 'SWR', 'SRF', 'Funk.net', 'BR', 'SR', 'Radio Bremen TV', 'rbtv', 'DW', 'HR', 'WDR', 'RBB',
+                             'ZDF-tivi', 'KiKA']}
+
+        channels = data["channels"]
+        for channel in channels:
+            if bSearch:
+                addDirectoryItem(channel, 'searchQuery&channel=%s' % (channel), channel, join(artPath, 'icon.png'))  # Auf Sender suchen
+            else:
+                addDirectoryItem(channel, 'list_videos&channel=%s' % (channel) , channel, join(artPath, 'icon.png')) # Auf Sender stöbern
+        setEndOfDirectory()
+    else:
+        if bSearch: # Überall suchen
+            query = showKeyBoard()
+            if not query: exit()
+            save_query(query)
+            list_videos(query=query)
+        else:        # Überall stöbern
+            list_videos()
+
+def last_queries():
+    queries = load_queries()
+    if queries == []: return
+    lst = []
+    delete_option = False
+    for index, item in enumerate(queries):
+        query = item.get('query')
+        if type(query) == str:
+            query = control.py2_encode(query)
+        channel = item.get('channel')
+        if channel:
+            label = "{0}: {1}".format(channel, query)
+        else:
+            channel = None
+            label = query
+        if label not in lst:
+            delete_option = True
+            addDirectoryItem(label, 'list_videos&query=%s&channel=%s' % (query, channel), 'search.png',
+                                                   'DefaultAddonsSearch.png',
+                                                   context=("Suchanfrage löschen", 'removeQuery&index=%s' % index))
+            lst += [(label)]
+
+    if delete_option:
+        addDirectoryItem("[B]Suchverlauf löschen[/B]", 'searchClear', 'plugin_info.png', 'DefaultAddonProgram.png', isFolder=False)
+    setEndOfDirectory(cache=False)  # addons  videos  files
+
+def chk_duplicates(url, title, topic, duplicates):
+    try:
+        if 'Audiodeskription' in title: return True
+        elif 'Hörfassung' in title: return True
+        elif 'Trailer' in topic: return True
+        for j in duplicates:
+            if url.split("//")[1] == j['url'].split("//")[1]:
+                return True
+            elif title == j['title']:
+                return True
+            else:
+                continue
+    except:
+        pass
+
+def showKeyBoard(sDefaultText=""):
+    # Create the keyboard object and display it modal
+    oKeyboard = control.keyboard(sDefaultText, "Suche")
+    oKeyboard.doModal()
+    sTerm = oKeyboard.getText() if oKeyboard.isConfirmed() else None
+    if sTerm is None or sTerm == '': return
+    sSearchText = sTerm.strip()
+    if len(sSearchText) > 0: return sSearchText
+    return
+
+def addDirectoryItem(name, query, thumb, icon, context=None, queue=False, isAction=True, isFolder=True):
+    url = '%s?action=%s' % (sysaddon, query) if isAction == True else query
+    thumb = getMedia(thumb, icon)
+    #laut kodi doku - ListItem([label, label2, path, offscreen])
+    listitem = control.item(name, offscreen=True) # Removed iconImage and thumbnailImage
+    listitem.setArt({'poster': thumb})
+    if not context == None:
+        cm = []
+        cm.append((context[0], 'RunPlugin(%s?action=%s)' % (sysaddon, context[1])))
+        listitem.addContextMenuItems(cm)
+    # isMatch, sPlot = cParser.parseSingleResult(query, "plot'.*?'([^']+)")
+    sPlot = '[COLOR blue]{0}[/COLOR]'.format(name)
+    if isFolder:
+        listitem.setInfo('video', {'overlay': 4, 'plot': control.unquote_plus(sPlot)})
+        listitem.setIsFolder(True)
+    listitem.setProperty('fanart_image', addonFanart)
+    control.addItem(syshandle, url, listitem, isFolder)
+
+def setEndOfDirectory(content='', cache=True ): # addons  videos  files
+    # https://romanvm.github.io/Kodistubs/_autosummary/xbmcplugin.html#xbmcplugin.setContent
+    control.content(syshandle, content)
+    control.directory(syshandle, succeeded=True, cacheToDisc=cache)
+
+def getMedia(mediaFile=None, icon=None):
+    mediaFile = mediaFile.lower()
+    icon = icon if icon and icon.rsplit('.')[-1] == 'png' else 'icon.png'
+    mediaFile = mediaFile if mediaFile.rsplit('.')[-1] == 'png' else mediaFile + '.png'
+    if control.exists(join(artPath, mediaFile)):
+        if control.inAdvancedsettings('favourites.xml'):
+            mediaFile = 'http://127.0.0.1:8080/resources/media/%s' % mediaFile
+        else:
+            mediaFile = join(artPath, mediaFile)
+    elif mediaFile.startswith('http'):
+        return mediaFile
+    elif control.exists(join(artPath, icon)):
+        mediaFile = join(artPath, icon)
+    else:
+        mediaFile = icon
+    return mediaFile
+
+def list_videos(query=None, channel=None, page=1):
     m = MediathekViewWeb(PER_PAGE, FUTURE)
     data = m.search(query, channel, page)
     if data["err"]:
-        dialog = xbmcgui.Dialog()
-        dialog.notification(_("Error"), data["err"])
+        control.dialog.notification("Error", data["err"])
         return
     results = data["result"]["results"]
 
     no_duplicates = []
+
     for i in results:
-        # keine unterstützung für ORF - videos können nicht abgespielt werden
-        if i["channel"] == 'ORF': continue
-        #if i["timestamp"]: print(i["timestamp"])
         try:
             dt = datetime.datetime.fromtimestamp(i["timestamp"], pytz.timezone("Europe/Berlin"))
         except:
@@ -54,7 +173,7 @@ def list_videos(callback, page, query=None, channel=None):
         url = ''
         if QUALITY == 0:  # Hoch
             for j in ("url_video_hd", "url_video", "url_video_low"):
-                if i.get(j) == '': 
+                if i.get(j) == '':
                     continue
                 else:
                     url = i.get(j)
@@ -62,7 +181,7 @@ def list_videos(callback, page, query=None, channel=None):
 
         elif QUALITY == 1:  # Mittel
             for j in ("url_video", "url_video_low"):
-                if i.get(j) == '': 
+                if i.get(j) == '':
                     continue
                 else:
                     url = i.get(j)
@@ -72,23 +191,22 @@ def list_videos(callback, page, query=None, channel=None):
 
         if url == '': continue
 
-        if not utils.chk_duplicates(url, i["title"], i["topic"], no_duplicates) == True:
+        if not chk_duplicates(url, i["title"], i["topic"], no_duplicates) == True:
             no_duplicates.append({'url': url, 'title': i["title"]})
         else:
             continue
-#--------------------------------------------------------
 
         today = datetime.date.today()
         if dt.date() == today:
-            date = _("Today")
+            date = "Heute"
         elif dt.date() == today + datetime.timedelta(days=-1):
-            date = _("Yesterday")
+            date = "Gestern"
         else:
             date = dt.strftime("%d.%m.%Y")
 
-        li = xbmcgui.ListItem("[{0}] {1} - {2}".format(i["channel"], i["topic"], i["title"]))
-        li.setArt({'thumb': artPath(i["channel"]), 'poster': artPath(i["channel"]), 'banner': artPath('banner')}) # favourites ok
-        li.setProperty('Fanart_Image', artPath('fanart'))
+        li = control.item("[{0}] {1} - {2}".format(i["channel"], i["topic"], i["title"]))
+        li.setArt({'thumb': getMedia(i["channel"]), 'poster': getMedia(i["channel"]), 'banner': getMedia('banner')}) # favourites ok
+        li.setProperty('Fanart_Image', addonFanart)
 
         li.setInfo("video", {
             "title": i["title"],
@@ -102,267 +220,91 @@ def list_videos(callback, page, query=None, channel=None):
         })
         li.setProperty("isPlayable", "true")
 
-        xbmcplugin.addDirectoryItem(
-            plugin.handle,
-            plugin.get_url(action="play", url=url, subtitle=i["url_subtitle"]),
+        control.addItem(
+            syshandle,
+            '%s?action=play&url=%s' %(sysaddon, url),   #sysaddon(action="play", url=url, subtitle=i["url_subtitle"]),
             li,
             isFolder=False
         )
 
     if len(results) == PER_PAGE:
-        next_page = page + 1
-        li = xbmcgui.ListItem("[COLOR blue]{0}[/COLOR]".format(_("Next page")))
-
-        li.setArt({'poster': artPath('next'), 'icon': artPath('next')})
-        li.setProperty('Fanart_Image', artPath('fanart'))
-        # remove unused cm menu
-        #li.setInfo('video', {'overlay': 4, 'plot': '[COLOR blue]{0}[/COLOR]'.format(_("Next page"))})
+        next_page = page + 1 # if page else 2
+        li = control.item("[COLOR blue]Nächste Seite[/COLOR]")
+        li.setArt({'poster': getMedia('next'), 'icon': getMedia('next')})
+        li.setProperty('Fanart_Image', addonFanart)
         li.setInfo('video', {'overlay': 4, 'plot': ' '}) # Alt+255
 
-        xbmcplugin.addDirectoryItem(
-            plugin.handle,
-            plugin.get_url(action=callback, page=next_page, query=query, channel=channel),
+        control.addItem(
+            syshandle,
+            '%s?action=list_videos&page=%s&query=%s&channel=%s' % (sysaddon, next_page, query, channel),
             li,
             isFolder=True
         )
-    xbmcplugin.setContent(plugin.handle, 'videos')
-    xbmcplugin.endOfDirectory(plugin.handle, cacheToDisc=True)
+    control.content(syshandle, 'videos')
+    control.directory(syshandle, cacheToDisc=True)
 
-
-def get_channel():
-    m = MediathekViewWeb()
-    data = m.channels()
-
-    if data["error"]:
-        dialog = xbmcgui.Dialog()
-        dialog.notification(_("Error"), data["error"])
-        return
-    # keine unterstützung für ORF - videos können nicht abgespielt werden
-    data["channels"].remove('ORF')
-    channels = data["channels"]
-    dialog = xbmcgui.Dialog()
-    index = dialog.select(_("Select channel"), channels)
-    if index == -1:
-        return
-    return channels[index]
-
-
-def save_query(query, channel=None):
-    with plugin.get_storage() as storage:
-        if 'queries' not in storage:
-            storage['queries'] = []
-        entry = {
-            'query': query,
-            'channel': channel
-        }
-        if entry in storage['queries']:
-            storage['queries'].remove(entry)
-        storage['queries'].insert(0, entry)
-
-
-def load_queries():
-    with plugin.get_storage() as storage:
-        if 'queries' not in storage:
-            storage['queries'] = []
-        return storage['queries']
-
-
-@plugin.action()
-def root():
-    # Letzte Suchanfrage
-    li = xbmcgui.ListItem(_("Last queries"))
-    li.setArt({'thumb': artPath('lastsearch'), 'poster': artPath('icon')})
-    li.setProperty('Fanart_Image', artPath('fanart'))
-    # remove unused cm menu
-    li.setInfo('video', {'overlay': 4, 'plot': '[B]MediathekViewWeb[/B]'})
-    xbmcplugin.addDirectoryItem(
-        plugin.handle,
-        plugin.get_url(action='last_queries'),
-        li,
-        isFolder=True
-    )
-    # Überall suchen
-    li = xbmcgui.ListItem(_("Search"))
-    li.setArt({'thumb': artPath('search'), 'poster': artPath('icon')})
-    li.setProperty('Fanart_Image', artPath('fanart'))
-    # remove unused cm menu
-    li.setInfo('video', {'overlay': 4, 'plot': '[B]MediathekViewWeb[/B]'})
-    xbmcplugin.addDirectoryItem(
-        plugin.handle,
-        plugin.get_url(action='search_all'),
-        li,
-        isFolder=True
-    )
-    #Auf Sender suchen
-    li = xbmcgui.ListItem(_("Search by channel"))
-    li.setArt({'thumb': artPath('search'), 'poster': artPath('icon')})
-    li.setProperty('Fanart_Image', artPath('fanart'))
-    # remove unused cm menu
-    li.setInfo('video', {'overlay': 4, 'plot': '[B]MediathekViewWeb[/B]'})
-    xbmcplugin.addDirectoryItem(
-        plugin.handle,
-        plugin.get_url(action='search_channel'),
-        li,
-        isFolder=True
-    )
-    # Überall stöbern
-    li = xbmcgui.ListItem(_("Browse"))
-    li.setArt({'thumb': artPath('search'), 'poster': artPath('icon')})
-    li.setProperty('Fanart_Image', artPath('fanart'))
-    # remove unused cm menu
-    li.setInfo('video', {'overlay': 4, 'plot': '[B]MediathekViewWeb[/B]'})
-    xbmcplugin.addDirectoryItem(
-        plugin.handle,
-        plugin.get_url(action='browse_all'),
-        li,
-        isFolder=True
-    )
-    # Auf Sender stöbern
-    li = xbmcgui.ListItem(_("Browse by channel"))
-    li.setArt({'thumb': artPath('search'), 'poster': artPath('icon')})
-    li.setProperty('Fanart_Image', artPath('fanart'))
-    # remove unused cm menu
-    li.setInfo('video', {'overlay': 4, 'plot': '[B]MediathekViewWeb[/B]'})
-    xbmcplugin.addDirectoryItem(
-        plugin.handle,
-        plugin.get_url(action='browse_channel'),
-        li,
-        isFolder=True
-    )
-
-    xbmcplugin.setContent(plugin.handle, '')
-    xbmcplugin.endOfDirectory(plugin.handle)
-
-
-@plugin.action()
-def last_queries():
-    queries = load_queries()
-    for index, item in enumerate(queries):
-        query = item.get('query')
-        # fix type for already saved encoded queries
-        if type(query) == str:
-            query = utils.py2_decode(query)
-        channel = item.get('channel')
-        if channel:
-            label = "{0}: {1}".format(channel, query)
-            url = plugin.get_url(action='search_channel', query=query, channel=channel)
-        else:
-            label = query
-            url = plugin.get_url(action='search_all', query=query)
-        li = xbmcgui.ListItem(label)
-        if channel:
-            li.setArt({'thumb': artPath(channel), 'poster': artPath('lastsearch')})
-        else:
-            li.setArt({'thumb': artPath('icon'), 'poster': artPath('lastsearch')})
-        li.setProperty('Fanart_Image', artPath('fanart'))
-        # remove unused cm menu
-        li.setInfo('video', {'overlay': 4, 'plot': '[COLOR blue]{0} : [/COLOR] {1} {2}'.format(_("Search term"), channel if channel != None else '', query)})
-        li.addContextMenuItems([
-            (
-                _("Remove query"),
-                'RunPlugin({0})'.format(plugin.get_url(action='remove_query', index=index))
-            )
-        ])
-        xbmcplugin.addDirectoryItem(
-            plugin.handle,
-            url,
-            li,
-            isFolder=True
-        )
-
-    if len(queries) > 1:
-        label = 'Suchverlauf löschen'
-        li = xbmcgui.ListItem(label)
-        li.setArt({'poster': artPath('tools'), 'icon': artPath('tools')})
-        li.setProperty('Fanart_Image', artPath('fanart'))
-        url = plugin.get_url(action='remove_all_query')
-        xbmcplugin.addDirectoryItem(
-            plugin.handle,
-            url,
-            li,
-            isFolder=False
-        )
-    xbmcplugin.endOfDirectory(plugin.handle)
-
-
-@plugin.action()
-def remove_query(params):
-    with plugin.get_storage() as storage:
-        storage['queries'].pop(int(params.index))
-    xbmc.executebuiltin('Container.Refresh')
-
-
-@plugin.action()
-def remove_all_query(params):
-    with plugin.get_storage() as storage:
-        while True:
-            if len(storage['queries']) > 0:
-                storage['queries'].pop()
-            else:
-                break
-    xbmc.executebuiltin('Container.Refresh')
-
-
-@plugin.action()
-def browse_all(params):
-    page = int(params.get("page", 1))
-    list_videos("browse_all", page)
-
-
-@plugin.action()
-def search_all(params):
-    page = int(params.get("page", 1))
-    query = params.get("query")
-    if not query:
-        dialog = xbmcgui.Dialog()
-        query = dialog.input(_("Search term"))
-        query = utils.py2_decode(query)
-        if not query: return
-
-    save_query(query)
-    list_videos("search_all", page, query=query)
-
-
-@plugin.action()
-def browse_channel(params):
-    page = int(params.get("page", 1))
-    channel = params.get("channel")
-    if not channel:
-        channel = get_channel()
-        if not channel: return
-
-    list_videos("browse_channel", page, channel=channel)
-
-
-@plugin.action()
-def search_channel(params):
-    page = int(params.get("page", 1))
-    channel = params.get("channel")
-    if not channel:
-        channel = get_channel()
-        if not channel: return
-
-    query = params.get("query")
-    if not query:
-        dialog = xbmcgui.Dialog()
-        query = dialog.input(_("Search term"))
-        query = utils.py2_decode(query)
-        if not query: return
-
-    save_query(query, channel)
-    list_videos("search_channel", page, query=query, channel=channel)
-
-
-@plugin.action()
 def play(params):
-    li = xbmcgui.ListItem(path=params.url)
-    if SUBTITLE:
-        subtitle_file = os.path.join(addon.profile_dir, "subtitle.srt")
-        subtitle_downloaded = download_subtitle(params.subtitle, subtitle_file)
+    li = control.item(path=params['url'])
+    if SUBTITLE == 'true':
+        subtitle_file = join(control.addonPath, "subtitle.srt")
+        subtitle_downloaded = download_subtitle(params['subtitle'], subtitle_file)
         if subtitle_downloaded:
             li.setSubtitles([subtitle_file])
-    xbmcplugin.setResolvedUrl(plugin.handle, True, li)
+    control.resolveUrl(syshandle, True, li)
 
 
-if __name__ == '__main__':
-    plugin.run()
+
+## =======================================================================================
+
+params = dict(control.parse_qsl(control.urlsplit(sys.argv[2]).query))
+
+action = params.get('action')
+bSearch = eval(params.get('bSearch')) if params.get('bSearch') else None
+bChannels = eval(params.get('bChannels')) if params.get('bChannels') else None
+
+if action == None or action == 'root':
+    root()
+
+elif action == 'searchQuery':
+    query = showKeyBoard()
+    if not query: exit()
+    channel = params.get("channel") if params.get("channel") != 'None' else None
+    page = int(params.get("page")) if params.get("page") else 1
+    save_query(query, channel)
+    list_videos(query=query, channel=channel, page=page)
+
+elif action == 'lastQueries':
+    last_queries()
+
+elif action == 'removeQuery':
+    remove_query(params)
+    queries = load_queries()
+    if queries == []:
+        xbmc.executebuiltin('Action(ParentDir)')
+    else:
+        xbmc.executebuiltin('Container.Refresh')
+
+elif action == 'searchClear':
+    remove_all_query()
+    xbmc.executebuiltin('Action(ParentDir)')
+
+elif action == 'channel':
+    showChannels(bSearch, bChannels)
+
+elif action == 'list_videos':
+    page = int(params.get("page")) if params.get("page") else 1
+    query = params.get("query") if params.get("query") != 'None' else None
+    channel = params.get("channel") if params.get("channel") != 'None' else None
+    save_query(query, channel)
+    list_videos(query=query, channel=channel, page=page)
+
+elif action == 'play':
+    play(params)
+
+elif action == 'addonSettings':
+    control.openSettings()
+
+# try:
+#     import pydevd
+#     if pydevd.connected: pydevd.kill_all_pydev_threads()
+# except: pass
