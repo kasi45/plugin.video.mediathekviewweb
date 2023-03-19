@@ -2,7 +2,7 @@
     <category label="Allgemein">
         <setting id="per_page" label="Pro Seite" type="slider" default="20" range="5,5,100" option="int"/>
         <setting id="enable_future" label="Zukünftige" type="bool" default="true"/>
-        <setting id="quality" type="enum" label="Qualität" default="0" lvalues="Hoch|Mittel|Niedrig" />
+        <setting id="quality" type="enum" label="Qualität" default="0" values="Hoch|Mittel|Niedrig" />
         <!--<setting id="enable_subtitle" label="Untertitel" type="bool" default="false"/>-->
     </category>
     <category label="Download">
