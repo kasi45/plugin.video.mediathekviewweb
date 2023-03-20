@@ -102,11 +102,11 @@ def chk_duplicates(url, title, topic, duplicates):
     try:
         if 'Audiodeskription' in title: return True
         elif 'Hörfassung' in title: return True
-        elif 'Trailer' in topic: return True
+        elif 'Trailer' in topic or 'Trailer' in title: return True
         for j in duplicates:
-            if url.split("//")[1] == j['url'].split("//")[1]:
-                return True
-            elif title == j['title']:
+            # if url.split("//")[1] == j['url'].split("//")[1]:
+            #     return True
+            if title == j['title']and topic == j['topic']:
                 return True
             else:
                 continue
@@ -174,6 +174,7 @@ def list_videos(query=None, channel=None, page=1):
     no_duplicates = []
 
     for i in results:
+        if i["channel"] == 'ORF': continue
         try:
             dt = datetime.datetime.fromtimestamp(i["timestamp"], pytz.timezone("Europe/Berlin"))
         except:
@@ -200,7 +201,7 @@ def list_videos(query=None, channel=None, page=1):
         if url == '': continue
 
         if not chk_duplicates(url, i["title"], i["topic"], no_duplicates) == True:
-            no_duplicates.append({'url': url, 'title': i["title"]})
+            no_duplicates.append({'url': url, 'title': i["title"], 'topic': i["topic"]})
         else:
             continue
 
