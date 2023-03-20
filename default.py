@@ -6,7 +6,6 @@
 
 import datetime
 from os.path import join
-import sys, json
 from resources.lib.mediathekviewweb import MediathekViewWeb
 from resources.lib import control
 from resources.lib.searchdb import *
@@ -21,7 +20,6 @@ syshandle = int(sys.argv[1]) if len(sys.argv) > 1 else ''
 
 artPath = control.artPath()
 addonFanart = control.addonFanart()
-
 
 PER_PAGE = int(control.getSetting("per_page"))
 FUTURE = True if control.getSetting("enable_future")=='true' else False

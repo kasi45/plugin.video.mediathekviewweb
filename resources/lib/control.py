@@ -3,7 +3,7 @@
 #2021-07-20
 #edit 2023-03-13
 
-import os, sys
+import os, sys, re
 import xbmc, xbmcplugin, xbmcaddon, xbmcgui, xbmcvfs
 
 is_python2 = sys.version_info.major == 2
@@ -21,8 +21,6 @@ else:
     from html.parser import HTMLParser
     from urllib.parse import urlparse, quote_plus, parse_qsl, unquote_plus, urljoin, quote, unquote, urlencode, parse_qs, urlsplit
     from urllib.request import Request, urlopen, urlretrieve
-
-
 
 def py2_decode(value):
     if is_python2:
@@ -128,7 +126,10 @@ def addonBanner():
     return os.path.join(artPath(), 'banner.png')
 
 def addonFanart():
-    return os.path.join(artPath(), 'fanart.jpg')
+    addonXml = os.path.join(py2_decode(translatePath(addonInfo('path'))), 'addon.xml')
+    with open(addonXml, 'r') as f: content = f.read()
+    fanart = re.search('fanart>([^<]+)', content).group(1)
+    return os.path.join(addonInfo('path'), os.path.normpath(fanart))
 
 def addonNext():
     return os.path.join(artPath(), 'next.png')
