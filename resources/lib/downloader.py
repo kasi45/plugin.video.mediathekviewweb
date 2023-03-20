@@ -1,7 +1,13 @@
 # -*- coding: UTF-8 -*-
 
+# last edit:
+# 2023-03-20
+
 import re
 import json
+import os, sys
+import inspect
+import xbmc, xbmcgui, xbmcvfs
 try:
     from urlparse import urlparse, parse_qsl
     from urllib import quote_plus, unquote_plus
@@ -10,11 +16,7 @@ except ImportError:
     from urllib.parse import urlparse, quote_plus, parse_qsl, unquote_plus
     from urllib.request import Request, urlopen
 
-import os, sys
-import inspect
-import xbmc, xbmcgui, xbmcvfs
-
-def download(name, image, url, subfolder=None):
+def download(name, image, url, subfolder=None):  # new
     if url == None: return
 
     from resources.lib import control
@@ -31,6 +33,8 @@ def download(name, image, url, subfolder=None):
     else:
         transname = name.translate(None, '\/:*?"<>|').strip('.')
 
+    transname = transname.replace(' ', '_') # new
+
     levels =['../../../..', '../../..', '../..', '..']
 
     if len(content) == 0:
@@ -42,10 +46,16 @@ def download(name, image, url, subfolder=None):
         if not control.makeFile(dest):
             xbmcgui.Dialog().ok(name, dest + '[CR]ERROR - Server | Verzeichnis[CR]Download fehlgeschlagen')
             return
-        if subfolder == None:
-            dest = os.path.join(dest, transname)
-        else:
+
+        # new
+        if subfolder != None:
             dest = os.path.join(dest, subfolder)
+
+        # if subfolder == None:
+        #     dest = os.path.join(dest, transname)
+        # else:
+        #     dest = os.path.join(dest, subfolder)
+
         if not control.makeFile(dest):
             xbmcgui.Dialog().ok(name, dest + '[CR]ERROR - Server | Verzeichnis[CR]Download fehlgeschlagen')
             return
