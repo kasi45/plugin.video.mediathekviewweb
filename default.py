@@ -229,7 +229,7 @@ def list_videos(query=None, channel=None, page=1):
         cm = []
         subFolder = i['topic'] if i.get('topic', False) else None
         title = control.quote(i["title"].replace(' ', '_'))
-        if control.getSetting('downloads') == 'true' and not control.getSetting('download.movie.path') == '':
+        if control.getSetting('downloads') == 'true' and control.exists(control.translatePath(control.getSetting('download.movie.path'))):
             cm.append(("Download", 'RunPlugin(%s?action=download&name=%s&image=%s&url=%s&subfolder=%s)' % (sysaddon, title, getMedia(i["channel"]), url, subFolder)))
         cm.append(('Einstellungen', 'RunPlugin(%s?action=addonSettings)' % sysaddon))
         li.addContextMenuItems(cm)
