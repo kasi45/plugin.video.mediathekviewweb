@@ -74,7 +74,7 @@ else:  # Python 2.x
         """
         return s.encode('ASCII')
 
-
+#kasi
 def open_resource(name):
     """Open a resource from the zoneinfo subdir for reading.
 
@@ -119,7 +119,7 @@ def resource_exists(name):
 
 _tzinfo_cache = {}
 
-
+# kasi
 def timezone(zone):
     r''' Return a datetime.tzinfo implementation for the given timezone
 

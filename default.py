@@ -9,9 +9,8 @@ from os.path import join
 from resources.lib.mediathekviewweb import MediathekViewWeb
 from resources.lib import control
 from resources.lib.searchdb import *
-
 # add pytz module to path
-module_dir = join(control.addonPath, "resources", "lib", "pytz")
+module_dir = join(control.addonPath, "resources", "lib")
 sys.path.insert(0, module_dir)
 import pytz
 
@@ -170,7 +169,6 @@ def list_videos(query=None, channel=None, page=1):
     results = data["result"]["results"]
 
     no_duplicates = []
-
     for i in results:
         if i["channel"] == 'ORF': continue
         try:
