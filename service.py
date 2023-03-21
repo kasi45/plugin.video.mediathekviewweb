@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#2023-03-19
+#2023-03-21
 
 import json
 import xbmc
@@ -40,7 +40,6 @@ def setWebSrv(ADDONID):
                 xbmc.sleep(1000)
         except:
             pass
-    # xbmc.startServer(iTyp=xbmc.SERVER_WEBSERVER, bStart=True)
 
 if inAdvancedsettings('favourites.xml'):
     currentWebserverpassword = json.loads(xbmc.executeJSONRPC(
@@ -53,13 +52,7 @@ if inAdvancedsettings('favourites.xml'):
         "result"]["value"]
     if currentWebSkin != addonId: setWebSrv(addonId)
 
-    # import pydevd
-    # pydevd.settrace('localhost', port=12345, stdoutToServer=True, stderrToServer=True)
-
     isWebSrv = False
-    # if inAdvancedsettings('webserver'):
-    #     isWebSrv = True  # start webserver in advancedsettings.xml
-    # else:
     try:
         isWebSrv = json.loads(xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.GetSettingValue","params":{"setting":"services.webserver"},"id":1}'))["result"]["value"]
         if not isWebSrv: xbmc.startServer(iTyp=xbmc.SERVER_WEBSERVER, bStart=True)
