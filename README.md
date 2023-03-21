@@ -1,4 +1,4 @@
-# plugin.video.mediathekviewweb
+# plugin.video.mediathekviewweb - V2
 
 Kodi Addon for [MediathekViewWeb](https://mediathekviewweb.de/)
 
