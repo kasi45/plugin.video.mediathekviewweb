@@ -170,73 +170,82 @@ def list_videos(query=None, channel=None, page=1):
 
     no_duplicates = []
     for i in results:
-        if i["channel"] == 'ORF': continue
         try:
-            dt = datetime.datetime.fromtimestamp(i["timestamp"], pytz.timezone("Europe/Berlin"))
+            if i["channel"] == 'ORF': continue
+            try:
+                dt = datetime.datetime.fromtimestamp(i["timestamp"], pytz.timezone("Europe/Berlin"))
+            except:
+                pass
+            url = ''
+            if QUALITY == 0:  # Hoch
+                for j in ("url_video_hd", "url_video", "url_video_low"):
+                    if i.get(j) == '':
+                        continue
+                    else:
+                        url = i.get(j)
+                        break
+
+            elif QUALITY == 1:  # Mittel
+                for j in ("url_video", "url_video_low"):
+                    if i.get(j) == '':
+                        continue
+                    else:
+                        url = i.get(j)
+                        break
+            else:  # Niedrig
+                url = i.get("url_video_low")
+
+            if url == '': continue
+            if sys.version_info[0] == 2:
+                title = i["title"].encode('ascii','ignore')
+                topic = i["topic"].encode('ascii','ignore') if i.get('topic', False) else None
+            else:
+                title = i["title"]
+                topic = i["topic"] if i.get('topic', False) else None
+
+            if not chk_duplicates(url, title, topic, no_duplicates) == True:
+                no_duplicates.append({'url': url, 'title': title, 'topic': topic})
+            else:
+                continue
+
+            today = datetime.date.today()
+            if dt.date() == today:
+                date = "Heute"
+            elif dt.date() == today + datetime.timedelta(days=-1):
+                date = "Gestern"
+            else:
+                date = dt.strftime("%d.%m.%Y")
+
+            li = control.item("[{0}] {1} - {2}".format(i["channel"], topic, title))
+            li.setArt({'thumb': getMedia(i["channel"]), 'poster': getMedia(i["channel"]), 'banner': getMedia('banner')}) # favourites ok
+            li.setProperty('Fanart_Image', addonFanart)
+
+            li.setInfo("video", {
+                "title": title,
+                "plot": "[B]" + title + "\n\n" + date + " - " + dt.strftime("%H:%M") + "[/B]\n" + i["description"],
+                "dateadded": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                "date": dt.strftime("%d.%m.%Y"),
+                "aired": dt.strftime("%d.%m.%Y"),
+                "year": dt.year,
+                "duration": i["duration"],
+                "studio": i["channel"],
+            })
+            li.setProperty("isPlayable", "true")
+            cm = []
+            subFolder = topic
+            title = control.quote(title.replace(' ', '_'))
+            if control.getSetting('downloads') == 'true' and control.exists(control.translatePath(control.getSetting('download.movie.path'))):
+                cm.append(("Download", 'RunPlugin(%s?action=download&name=%s&image=%s&url=%s&subfolder=%s)' % (sysaddon, title, getMedia(i["channel"]), url, subFolder)))
+            cm.append(('Einstellungen', 'RunPlugin(%s?action=addonSettings)' % sysaddon))
+            li.addContextMenuItems(cm)
+            control.addItem(
+                syshandle,
+                '%s?action=play&url=%s' %(sysaddon, url),   #sysaddon(action="play", url=url, subtitle=i["url_subtitle"]),
+                li,
+                isFolder=False
+            )
         except:
             pass
-        url = ''
-        if QUALITY == 0:  # Hoch
-            for j in ("url_video_hd", "url_video", "url_video_low"):
-                if i.get(j) == '':
-                    continue
-                else:
-                    url = i.get(j)
-                    break
-
-        elif QUALITY == 1:  # Mittel
-            for j in ("url_video", "url_video_low"):
-                if i.get(j) == '':
-                    continue
-                else:
-                    url = i.get(j)
-                    break
-        else:  # Niedrig
-            url = i.get("url_video_low")
-
-        if url == '': continue
-
-        if not chk_duplicates(url, i["title"], i["topic"], no_duplicates) == True:
-            no_duplicates.append({'url': url, 'title': i["title"], 'topic': i["topic"]})
-        else:
-            continue
-
-        today = datetime.date.today()
-        if dt.date() == today:
-            date = "Heute"
-        elif dt.date() == today + datetime.timedelta(days=-1):
-            date = "Gestern"
-        else:
-            date = dt.strftime("%d.%m.%Y")
-
-        li = control.item("[{0}] {1} - {2}".format(i["channel"], i["topic"], i["title"]))
-        li.setArt({'thumb': getMedia(i["channel"]), 'poster': getMedia(i["channel"]), 'banner': getMedia('banner')}) # favourites ok
-        li.setProperty('Fanart_Image', addonFanart)
-
-        li.setInfo("video", {
-            "title": i["title"],
-            "plot": "[B]" + i["title"] + "\n\n" + date + " - " + dt.strftime("%H:%M") + "[/B]\n" + i["description"],
-            "dateadded": dt.strftime("%Y-%m-%d %H:%M:%S"),
-            "date": dt.strftime("%d.%m.%Y"),
-            "aired": dt.strftime("%d.%m.%Y"),
-            "year": dt.year,
-            "duration": i["duration"],
-            "studio": i["channel"],
-        })
-        li.setProperty("isPlayable", "true")
-        cm = []
-        subFolder = i['topic'] if i.get('topic', False) else None
-        title = control.quote(i["title"].replace(' ', '_'))
-        if control.getSetting('downloads') == 'true' and control.exists(control.translatePath(control.getSetting('download.movie.path'))):
-            cm.append(("Download", 'RunPlugin(%s?action=download&name=%s&image=%s&url=%s&subfolder=%s)' % (sysaddon, title, getMedia(i["channel"]), url, subFolder)))
-        cm.append(('Einstellungen', 'RunPlugin(%s?action=addonSettings)' % sysaddon))
-        li.addContextMenuItems(cm)
-        control.addItem(
-            syshandle,
-            '%s?action=play&url=%s' %(sysaddon, url),   #sysaddon(action="play", url=url, subtitle=i["url_subtitle"]),
-            li,
-            isFolder=False
-        )
 
     if len(results) == PER_PAGE:
         next_page = page + 1 # if page else 2
