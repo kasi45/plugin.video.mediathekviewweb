@@ -159,6 +159,7 @@ def _get_storage(filename='storage.pcl'):
     :return: Storage object
     :rtype: Storage
     """
+    if filename == None or filename == '': filename = 'storage.pcl'
     _profile_dir = _py2_decode(translatePath(xbmcaddon.Addon().getAddonInfo('profile')))
 
     return _Storage(_profile_dir, filename)
@@ -177,10 +178,13 @@ def save_query(query, channel=None):
         storage['queries'].insert(0, entry)
 
 def load_queries():
-    with _get_storage() as storage:
-        if 'queries' not in storage:
-            storage['queries'] = []
-        return storage['queries']
+    try:
+        with _get_storage() as storage:
+            if 'queries' not in storage:
+                storage['queries'] = []
+            return storage['queries']
+    except:
+        return []
 
 def remove_query(params):
     with _get_storage() as storage:
