@@ -47,8 +47,10 @@ params = dict(control.parse_qsl(control.urlsplit(sys.argv[2]).query))
 action = params.get('action')
 
 if action == None or action == 'root':
-    #cMediathek().root()
-    cMediathek().root_all()
+    if control.getSetting('menu') == '0':
+        cMediathek().root()
+    else:
+        cMediathek().root_all()
 
 elif action == 'mediathek':
     cMediathek().get(params)
