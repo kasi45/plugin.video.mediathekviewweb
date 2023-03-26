@@ -17,15 +17,14 @@ from copy import deepcopy
 from shutil import copyfile
 import xbmc, xbmcaddon
 
-if sys.version_info[0] == 2:
-    from xbmc import translatePath
-else:
-    from xbmcvfs import translatePath
-
 if sys.version_info.major == 3:
     from typing import MutableMapping
+    from xbmcvfs import translatePath
+    from urllib.parse import quote_plus
 else:
     from collections import MutableMapping
+    from xbmc import translatePath, executebuiltin
+    from urllib import quote_plus
 
 
 class _Storage(MutableMapping):
@@ -161,7 +160,7 @@ def _get_storage(filename='storage.pcl'):
     """
     if filename == None or filename == '': filename = 'storage.pcl'
     _profile_dir = _py2_decode(translatePath(xbmcaddon.Addon().getAddonInfo('profile')))
-
+    if not os.path.exists(_profile_dir): os.mkdir(_profile_dir)
     return _Storage(_profile_dir, filename)
 
 def save_query(query, channel=None):
@@ -200,3 +199,14 @@ def remove_all_query():
             else:
                 break
     #xbmc.executebuiltin('Container.Refresh')
+
+def searchNew(channel=None):
+    k = xbmc.Keyboard('', "Suche")
+    k.doModal()
+    term = k.getText() if k.isConfirmed() else None
+    if term is None or term == '': return
+    query = term.strip()
+    save_query(query, channel)
+    url = '%s?action=mediathek&channel=%s&query=%s' % (sys.argv[0], channel, query)
+    xbmc.executebuiltin('Container.Update(%s)' % url)
+    #return query

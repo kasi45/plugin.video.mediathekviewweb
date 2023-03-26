@@ -22,6 +22,8 @@ else:
     from urllib.parse import urlparse, quote_plus, parse_qsl, unquote_plus, urljoin, quote, unquote, urlencode, parse_qs, urlsplit
     from urllib.request import Request, urlopen, urlretrieve
 
+iteritems = lambda d: ((hasattr(d, 'iteritems') and d.iteritems) or d.items)()
+
 def py2_decode(value):
     if is_python2:
         try:
