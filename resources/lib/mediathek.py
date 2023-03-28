@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
 
+# 2023-03-29
+
 import sys
 import datetime
 from os.path import join
@@ -137,7 +139,7 @@ class cMediathek:
         thumb = self.getMedia(thumb, icon)
         #laut kodi doku - ListItem([label, label2, path, offscreen])
         listitem = control.item(name, offscreen=True) # Removed iconImage and thumbnailImage
-        listitem.setArt({'poster': thumb})
+        listitem.setArt({'poster': thumb, 'thumb': thumb,})
         if not context == None:
             cm = []
             cm.append((context[0], 'RunPlugin(%s?action=%s)' % (sysaddon, context[1])))
