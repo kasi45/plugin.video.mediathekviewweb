@@ -24,14 +24,19 @@ addonFanart = control.addonFanart()
 PER_PAGE = int(control.getSetting("per_page"))
 FUTURE = True if control.getSetting("enable_future")=='true' else False
 QUALITY = int(control.getSetting("quality"))
-SUBTITLE = True if control.getSetting("enable_subtitle")=='true' else False
 
-# if SUBTITLE == 'true':
-#     from resources.lib.subtitles import download_subtitle
+#Todo
+#SUBTITLE = True if control.getSetting("enable_subtitle")=='true' else False
+SUBTITLE = False
+if SUBTITLE == 'true':
+    from resources.lib.subtitles import download_subtitle
 
 params = dict(control.parse_qsl(control.urlsplit(sys.argv[2]).query))
 
 class cMediathek:
+    def __init__(self):
+        self.blockedDict = self.blocked_dict()
+
     def get(self, params):
         try:
             self.list = self.getMediaData(params)
@@ -91,12 +96,28 @@ class cMediathek:
         self.addDirectoryItem("Überall stöbern", 'mediathek', 'search.png', 'DefaultVideo.png')
         self.setEndOfDirectory(cache=False)
 
+    def channelList(self):
+        #TODO
+        isStaticChannelList = True
+        if isStaticChannelList:
+            # statisch
+            data = {'error': None,
+                    'channels': ['ARD', 'ZDF', 'MDR', 'ARTE.DE', '3Sat', 'PHOENIX', 'NDR', 'SWR', 'SRF', 'Funk.net', 'BR',
+                                 'SR', 'Radio Bremen TV', 'rbtv', 'DW', 'HR', 'WDR', 'RBB', 'ZDF-tivi', 'KiKA']}
+        else:
+            m = MediathekViewWeb()
+            data = m.channels()
+            if data["error"]:
+                dialog = xbmcgui.Dialog()
+                dialog.notification(_("Error"), data["error"])
+                return
+            # keine unterstützung für ORF - videos können nicht abgespielt werden
+            data["channels"].remove('ORF')
+
+        return data["channels"]
+
     def searchChannel(self, bSearch=True):
-        data = {'error': None,
-                        'channels': ['ARD', 'ZDF', 'MDR', 'ARTE.DE', '3Sat', 'PHOENIX', 'NDR', 'SWR', 'SRF', 'Funk.net', 'BR',
-                                     'SR', 'Radio Bremen TV', 'rbtv', 'DW', 'HR', 'WDR', 'RBB', 'ZDF-tivi', 'KiKA']}
-        channels = data["channels"]
-        for channel in channels:
+        for channel in self.channelList():
             if bSearch:
                 self.addDirectoryItem(channel, 'search_new&channel=%s' % channel, channel, join(artPath, 'icon.png'), isFolder=False)  # Auf Sender suchen
             else:
@@ -272,14 +293,18 @@ class cMediathek:
         self.setEndOfDirectory(content='videos', cache=True)  # addons  videos  files
 
 
+    def blocked_dict(self):
+        blockedDict = ['Audiodeskription', 'Hörfassung', 'Trailer']  # permanenter Block
+        blockedStr = control.getSetting('blockedStr').split(',')  # aus setting.xml blockieren
+        if len(blockedStr) <= 1: blockedStr = control.getSetting('blockedStr').split()
+        for i in blockedStr: blockedDict.append(i.lower())
+        return blockedDict
+
     def chk_duplicates(self, url, title, topic, duplicates):
         try:
-            if 'Audiodeskription' in title:
-                return True
-            elif 'Hörfassung' in title:
-                return True
-            elif 'Trailer' in topic or 'Trailer' in title:
-                return True
+            for i in self.blockedDict:
+                if i.lower() in title.lower(): return True
+
             for j in duplicates:
                 # if url.split("//")[1] == j['url'].split("//")[1]:
                 #     return True

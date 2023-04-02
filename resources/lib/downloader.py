@@ -38,7 +38,7 @@ def download(name, image, url, subfolder=None):  # new
     levels =['../../../..', '../../..', '../..', '..']
 
     if len(content) == 0:
-        dest = control.getSetting('download.movie.path', False) #TODO
+        dest = control.getSetting('download.movie.path', False)
         dest = control.translatePath(dest)
         for level in levels:
             try: control.makeFile(os.path.abspath(os.path.join(dest, level)))
@@ -60,7 +60,7 @@ def download(name, image, url, subfolder=None):  # new
             xbmcgui.Dialog().ok(name, dest + '[CR]ERROR - Server | Verzeichnis[CR]Download fehlgeschlagen')
             return
     else:
-        dest = control.getSetting('download.tv.path', False) #TODO
+        dest = control.getSetting('download.tv.path', False)
         dest = control.translatePath(dest)
         for level in levels:
             try: control.makeFile(os.path.abspath(os.path.join(dest, level)))
