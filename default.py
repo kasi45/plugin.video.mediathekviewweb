@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# 2023-05-08
+
 import sys
 from os.path import join
 from resources.lib.mediathek import cMediathek
@@ -44,6 +46,9 @@ def window(title='', content='', filename=''):
 
 params = dict(control.parse_qsl(control.urlsplit(sys.argv[2]).query))
 
+# import pydevd
+# pydevd.settrace('localhost', port=12345, stdoutToServer=True, stderrToServer=True)
+
 action = params.get('action')
 
 if action == None or action == 'root':
@@ -51,10 +56,11 @@ if action == None or action == 'root':
         cMediathek().root()
     else:
         cMediathek().root_all()
-
-elif action == 'mediathek':
+elif action == 'search':
     cMediathek().get(params)
-
+    query = params.get("query") if params.get("query") != 'None' else None
+    channel = params.get("channel") if params.get("channel") != 'None' else None
+    searchdb.save_query(query, channel)
 elif action == 'search_menu':
     cMediathek().searchMenu()
 elif action == 'search_last':
@@ -64,13 +70,16 @@ elif action == 'search_channel':
 elif action == 'search_new':
     channel = params.get("channel")
     query = searchdb.searchNew(channel=channel)
-
+#--------------------------------
+elif action == 'browse':
+    cMediathek().get(params)
 elif action == 'browse_menu':
     cMediathek().browseMenu()
 elif action == 'browse_channel':
     cMediathek().searchChannel(bSearch=False)
-elif action == 'browse':
-    cMediathek().get()
+#--------------------------------
+elif action == 'play':
+    cMediathek().play(params)
 
 elif action == 'removeQuery':   # von contextMenu
     searchdb.remove_query(params)
@@ -79,30 +88,18 @@ elif action == 'removeQuery':   # von contextMenu
         xbmc.executebuiltin('Action(ParentDir)')
     else:
         xbmc.executebuiltin('Container.Refresh')
-
 elif action == 'searchClear':
     searchdb.remove_all_query()
     xbmc.executebuiltin('Action(ParentDir)')
 
-elif action == 'list_videos':
-    page = int(params.get("page")) if params.get("page") else 1
-    query = params.get("query") if params.get("query") != 'None' else None
-    channel = params.get("channel") if params.get("channel") != 'None' else None
-    searchdb.save_query(query, channel)
-    cMediathek().get(params)
-
-elif action == 'play':
-    cMediathek().play(params)
-
-elif action == 'addonSettings':
-    control.openSettings()
-
 elif action == "download":
     from resources.lib import downloader
     downloader.download(name=params.get("name"), image=params.get("image"), url=params.get("url"), subfolder=params.get("subfolder"))
-
 elif action == "downloadInfo":
         window('Hilfe zum Syntax für den Ordnerpfad', '', 'downloadinfo.txt')
+
+elif action == 'addonSettings':
+    control.openSettings()
 
 # try:
 #     import pydevd

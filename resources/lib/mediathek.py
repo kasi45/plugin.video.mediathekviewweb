@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-# 2023-03-29
+# 2023-05-08
 
 import sys
 import datetime
@@ -67,7 +67,7 @@ class cMediathek:
         if len(control.listDir(downloadFolder)[0]) > 0:
             self.addDirectoryItem("Alle Downloads", downloadFolder, 'downloads.png', 'DefaultFolder.png', isAction=False)
         self.addDirectoryItem("Einstellungen", 'addonSettings', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
-        self.setEndOfDirectory(cache=True)
+        self.setEndOfDirectory()
 
     def root_all(self):
         queries = searchdb.load_queries()
@@ -76,12 +76,12 @@ class cMediathek:
         self.addDirectoryItem("Auf Sender suchen", 'search_channel', 'search.png', 'DefaultVideo.png')
         self.addDirectoryItem("Überall suchen", 'search_new', 'search.png', 'DefaultVideo.png', isFolder=False)
         self.addDirectoryItem("Auf Sender stöbern", 'browse_channel', 'search.png', 'DefaultVideo.png')
-        self.addDirectoryItem("Überall stöbern", 'mediathek', 'search.png', 'DefaultVideo.png')
+        self.addDirectoryItem("Überall stöbern", 'browse', 'search.png', 'DefaultVideo.png')
         downloadFolder = control.getSetting('download.movie.path')
         if len(control.listDir(downloadFolder)[0]) > 0:
             self.addDirectoryItem("Alle Downloads", downloadFolder, 'downloads.png', 'DefaultFolder.png', isAction=False)
         self.addDirectoryItem("Einstellungen", 'addonSettings', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
-        self.setEndOfDirectory(cache=True)
+        self.setEndOfDirectory()
 
     def searchMenu(self):
         queries = searchdb.load_queries()
@@ -89,12 +89,12 @@ class cMediathek:
             self.addDirectoryItem("Letzte Suchanfrage", 'search_last', 'search.png', 'DefaultVideo.png')
         self.addDirectoryItem("Auf Sender suchen", 'search_channel', 'search.png', 'DefaultVideo.png')
         self.addDirectoryItem("Überall suchen", 'search_new', 'search.png', 'DefaultVideo.png', isFolder=False)
-        self.setEndOfDirectory(cache=False)
+        self.setEndOfDirectory()
 
     def browseMenu(self):
         self.addDirectoryItem("Auf Sender stöbern", 'browse_channel', 'search.png', 'DefaultVideo.png')
-        self.addDirectoryItem("Überall stöbern", 'mediathek', 'search.png', 'DefaultVideo.png')
-        self.setEndOfDirectory(cache=False)
+        self.addDirectoryItem("Überall stöbern", 'browse', 'search.png', 'DefaultVideo.png')
+        self.setEndOfDirectory()
 
     def channelList(self):
         #TODO
@@ -108,6 +108,7 @@ class cMediathek:
             m = MediathekViewWeb()
             data = m.channels()
             if data["error"]:
+                import xbmcgui
                 dialog = xbmcgui.Dialog()
                 dialog.notification(_("Error"), data["error"])
                 return
@@ -121,7 +122,7 @@ class cMediathek:
             if bSearch:
                 self.addDirectoryItem(channel, 'search_new&channel=%s' % channel, channel, join(artPath, 'icon.png'), isFolder=False)  # Auf Sender suchen
             else:
-                self.addDirectoryItem(channel, 'mediathek&channel=%s' % channel, channel, join(artPath, 'icon.png'))  # Auf Sender stöbern
+                self.addDirectoryItem(channel, 'search&channel=%s' % channel, channel, join(artPath, 'icon.png'))  # Auf Sender stöbern
         self.setEndOfDirectory()
 
     def searchLast(self):
@@ -146,14 +147,14 @@ class cMediathek:
                 thumb = 'icon.png'
             if label not in lst:
                 delete_option = True
-                self.addDirectoryItem(label, 'mediathek&query=%s&channel=%s' % (query, channel), thumb,
+                self.addDirectoryItem(label, 'search&query=%s&channel=%s' % (query, channel), thumb,
                                  'DefaultAddonsSearch.png',
                                  context=("Suchanfrage löschen", 'removeQuery&index=%s' % index))
                 lst += [(label)]
 
         if delete_option:
             self.addDirectoryItem("[B]Suchverlauf löschen[/B]", 'searchClear', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
-        self.setEndOfDirectory(cache=False)  # addons  videos  files
+        self.setEndOfDirectory()  # addons  videos  files
 
     def addDirectoryItem(self,name, query, thumb, icon, context=None, queue=False, isAction=True, isFolder=True):
         url = '%s?action=%s' % (sysaddon, query) if isAction == True else query
@@ -286,7 +287,7 @@ class cMediathek:
 
             control.addItem(
                 syshandle,
-                '%s?action=mediathek&page=%s&query=%s&channel=%s' % (sysaddon, next_page, self.query, self.channel),
+                '%s?action=search&page=%s&query=%s&channel=%s' % (sysaddon, next_page, self.query, self.channel),
                 li,
                 isFolder=True
             )

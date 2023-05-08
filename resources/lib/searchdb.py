@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # 2022-10-05
-# edit 2023-02-10
+# edit 2023-05-08
 # kasi - SourceCode class _Storage() von  https://github.com/vlmaksime/script.module.simpleplugin
 """
 SimplePlugin micro-framework for Kodi content plugins
@@ -20,11 +20,9 @@ import xbmc, xbmcaddon
 if sys.version_info.major == 3:
     from typing import MutableMapping
     from xbmcvfs import translatePath
-    from urllib.parse import quote_plus
 else:
     from collections import MutableMapping
-    from xbmc import translatePath, executebuiltin
-    from urllib import quote_plus
+    from xbmc import translatePath
 
 
 class _Storage(MutableMapping):
@@ -188,8 +186,6 @@ def load_queries():
 def remove_query(params):
     with _get_storage() as storage:
         storage['queries'].pop(int(params.get('index')))
-        #storage['queries'].pop(params)
-    #xbmc.executebuiltin('Container.Refresh')
 
 def remove_all_query():
     with _get_storage() as storage:
@@ -198,7 +194,6 @@ def remove_all_query():
                 storage['queries'].pop()
             else:
                 break
-    #xbmc.executebuiltin('Container.Refresh')
 
 def searchNew(channel=None):
     k = xbmc.Keyboard('', "Suche")
@@ -207,6 +202,5 @@ def searchNew(channel=None):
     if term is None or term == '': return
     query = term.strip()
     save_query(query, channel)
-    url = '%s?action=mediathek&channel=%s&query=%s' % (sys.argv[0], channel, query)
+    url = '%s?action=search&channel=%s&query=%s' % (sys.argv[0], channel, query)
     xbmc.executebuiltin('Container.Update(%s)' % url)
-    #return query
