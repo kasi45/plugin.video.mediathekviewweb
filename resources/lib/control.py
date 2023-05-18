@@ -129,9 +129,15 @@ def addonBanner():
 
 def addonFanart():
     addonXml = os.path.join(py2_decode(translatePath(addonInfo('path'))), 'addon.xml')
-    with open(addonXml, 'r') as f: content = f.read()
-    fanart = re.search('fanart>([^<]+)', content).group(1)
-    return os.path.join(addonInfo('path'), os.path.normpath(fanart))
+    import xml.dom.minidom as minidom
+    doc = minidom.parse(addonXml)
+    # with open(addonXml, 'r') as f: content = f.read()
+    # fanart = re.search('fanart>([^<]+)', content).group(1)
+    fanart = doc.getElementsByTagName('fanart')[0].firstChild.nodeValue
+    fanart = os.path.join(addonInfo('path'), os.path.normpath(fanart))
+    if os.path.exists(fanart):
+        return fanart
+    return
 
 def addonNext():
     return os.path.join(artPath(), 'next.png')
