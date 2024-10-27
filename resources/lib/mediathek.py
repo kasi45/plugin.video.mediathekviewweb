@@ -295,10 +295,10 @@ class cMediathek:
 
 
     def blocked_dict(self):
-        blockedDict = ['Audiodeskription', 'Hörfassung', 'Trailer']  # permanenter Block
+        blockedDict = ['Audiodeskription','Hörfassung','Trailer','(Französisch)']  # permanenter Block
         blockedStr = control.getSetting('blockedStr').split(',')  # aus setting.xml blockieren
         if len(blockedStr) <= 1: blockedStr = control.getSetting('blockedStr').split()
-        for i in blockedStr: blockedDict.append(i.lower())
+        for i in blockedStr: blockedDict.append(i.lower().strip())
         return blockedDict
 
     def chk_duplicates(self, url, title, topic, duplicates):
