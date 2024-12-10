@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.mediathekviewweb" name="MediathekViewWeb V2" version="2023.11.25" provider-name="itouch5000 - edit by kasi">
+<addon id="plugin.video.mediathekviewweb" name="MediathekViewWeb V2" version="2024.12.10" provider-name="itouch5000 - edit by kasi">
     <requires>
         <import addon="script.module.requests" version="2.7.0"/>
         <!-- for remote debug -->
@@ -18,8 +18,8 @@
 		<description lang="de_DE">MediathekViewWeb ist eine einfache Browser-Oberfläche für den Zugriff auf die Filmliste des MediathekView Projekts.</description>
         <license>GPL 2.0</license>
         <assets>
-            <icon>resources/media/icon.png</icon>
-            <fanart>resources/media/icon.png</fanart>
+            <icon>resources/media/icon.jpg</icon>
+            <fanart>resources/media/fanart.png</fanart>
             <screenshot>resources/media/screenshots/screenshot-01.jpg</screenshot>
             <!-- <screenshot>resources/media/screenshots/screenshot-02.jpg</screenshot>
             <screenshot>resources/media/screenshots/screenshot-03.jpg</screenshot> -->
