@@ -266,7 +266,7 @@ class cMediathek:
                 subFolder = topic
                 downloadTitle = control.quote(title.replace(' ', '_'))
                 if isDownload:
-                    cm.append(("Download", 'RunPlugin(%s?action=download&name=%s&image=%s&url=%s&subfolder=%s)' % (sysaddon, downloadTitle, self.getMedia(i["channel"]), url, subFolder)))
+                    cm.append(("Download", 'RunPlugin(%s?action=download&name=%s&image=%s&url=%s&subfolder=%s)' % (sysaddon, downloadTitle, self.getMedia(i["channel"]), control.quote(url), subFolder)))
                 cm.append(('Einstellungen', 'RunPlugin(%s?action=addonSettings)' % sysaddon))
                 li.addContextMenuItems(cm)
                 control.addItem(
