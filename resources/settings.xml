@@ -1,0 +1,18 @@
+<settings>
+    <category label="Allgemein">
+        <setting id="menu" type="enum" label="HauptMenu" default="1" values="unterteilt|alles in einem" />
+        <setting id="per_page" label="Pro Seite" type="slider" default="20" range="5,5,100" option="int"/>
+        <setting id="enable_future" label="Zukünftige" type="bool" default="true"/>
+        <setting id="quality" type="enum" label="Qualität" default="0" values="Hoch|Mittel|Niedrig" />
+        <setting id="blockedStr" type="text" label="Begriffe bei Suche ausschließen" default="Englisch"/>
+        <!--<setting id="enable_subtitle" label="Untertitel" type="bool" default="false"/>-->
+    </category>
+    <category label="Download">
+        <setting id="downloads" type="bool" label="Herunterladen aktivieren" default="false" />
+        <!-- <setting type="sep" /> -->
+        <setting type="lsep" label="Bitte Ordnerpfade eingeben" />
+        <!--<<setting type="text" label="oder [COLOR blue]smb://ServerIP/path_to_files/ | nfs://ServerIP/path_to_files/[/COLOR]" /> -->
+        <setting label="[COLOR blue]Hier Hilfe zum Syntax für den Ordnerpfad[/COLOR]" type="action" action="RunPlugin(plugin://plugin.video.xship/?action=settings&amp;subaction=downloadInfo)" option=""/>
+        <setting id="download.movie.path" type="text" label="Filme" enable="!eq(-3,false)" default="" />
+    </category>
+</settings>
